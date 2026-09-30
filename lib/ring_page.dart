@@ -2,7 +2,6 @@ import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 
 import 'alarm_service.dart';
-import 'sounds.dart';
 
 class RingPage extends StatelessWidget {
   final AlarmSettings alarm;
@@ -24,8 +23,12 @@ class RingPage extends StatelessWidget {
                 const Text('HERÄÄ!',
                     style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900)),
                 Text(t, style: const TextStyle(fontSize: 72)),
-                Text(soundFromAsset(alarm.assetAudioPath).name,
-                    style: const TextStyle(fontSize: 18)),
+                FutureBuilder<String>(
+                  future: AlarmService.soundLabel(alarm),
+                  builder: (_, snap) => Text(snap.data ?? '',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 18)),
+                ),
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.tonal(

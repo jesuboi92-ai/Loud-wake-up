@@ -1,12 +1,14 @@
 # Loud Wake Up 🚨
 
-Flutter-herätyskello iOS:lle, jossa on 29 kovaäänistä herätysääntä (sireenit, klaksonit, hälyttimet, wobble, mega-sekoitus…).
+Flutter-herätyskello iOS:lle, jossa on 300 kovaäänistä herätysääntä (sireenit, klaksonit, hälyttimet, wobble, mega-sekoitus…).
 Äänet on generoitu synteettisesti (`tools/generate_sounds.py`), joten ne ovat vapaasti käytettäviä.
 
 ## Ominaisuudet
 - Useita herätyksiä, valinta ääni kerrallaan (esikuuntelu ▶) tai 🎲 satunnainen ääni
 - Äänenvoimakkuus pakotetaan maksimiin (`volumeEnforced`), värinä päällä
 - Toisto joka päivä, torkku 5 min, pyyhkäise herätys pois listasta
+- 🎼 Äänisarja: 2–5 ääntä peräkkäin (10–45 s kukin), satunnaiset vaiheet arvotaan uudelleen joka aamu
+- 🎵 Omat äänet: mp3/m4a/wav/mp4 Tiedostot-sovelluksesta tai Musiikki-kirjastosta (ei DRM-suojattuja Apple Music/Spotify-striimejä)
 - Toimii taustalla ja lukitulla näytöllä (`alarm`-paketti)
 
 ## Käyttöönotto
@@ -22,7 +24,7 @@ flutter pub get
 flutter run --release
 ```
 
-Halutessasi voit luoda äänet uudelleen: `python tools/generate_sounds.py` (tarvitsee numpy:n).
+Äänet voi luoda uudelleen: `python tools/generate_sounds.py` ja `python tools/generate_variants.py` (tarvitsevat numpy:n).
 
 ## Tärkeää iOS:n rajoituksista
 - iOS ei salli kolmannen osapuolen sovelluksille oikeaa herätystä samalla tavalla kuin kellosovellukselle.

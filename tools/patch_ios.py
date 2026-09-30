@@ -9,17 +9,25 @@ root = Path(__file__).resolve().parent.parent / "ios"
 
 plist = root / "Runner" / "Info.plist"
 text = plist.read_text(encoding="utf-8")
-if "UIBackgroundModes" not in text:
-    block = (
+blocks = {
+    "UIBackgroundModes": (
         "\t<key>UIBackgroundModes</key>\n\t<array>\n"
         "\t\t<string>audio</string>\n\t\t<string>fetch</string>\n\t</array>\n"
-    )
-    idx = text.rindex("</dict>")
-    text = text[:idx] + block + text[idx:]
-    plist.write_text(text, encoding="utf-8")
-    print("Info.plist: UIBackgroundModes lisätty")
-else:
-    print("Info.plist: jo kunnossa")
+    ),
+    # Tarvitaan, kun omia ääniä tuodaan Musiikki-kirjastosta.
+    "NSAppleMusicUsageDescription": (
+        "\t<key>NSAppleMusicUsageDescription</key>\n"
+        "\t<string>Valitse herätysääneksi kappale Musiikki-kirjastostasi.</string>\n"
+    ),
+}
+for key, block in blocks.items():
+    if key not in text:
+        idx = text.rindex("</dict>")
+        text = text[:idx] + block + text[idx:]
+        print(f"Info.plist: {key} lisätty")
+    else:
+        print(f"Info.plist: {key} jo kunnossa")
+plist.write_text(text, encoding="utf-8")
 
 podfile = root / "Podfile"
 if podfile.exists():

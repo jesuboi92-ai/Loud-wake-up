@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 
 import 'home_page.dart';
 import 'ring_page.dart';
+import 'sounds.dart';
 
 final navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Alarm.init();
+  await SoundLibrary.load();
   runApp(const LoudWakeUpApp());
 }
 

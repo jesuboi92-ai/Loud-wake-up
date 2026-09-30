@@ -1,8 +1,9 @@
 import 'package:alarm/alarm.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 import 'alarm_service.dart';
+import 'sequence.dart';
+import 'sound_picker_page.dart';
 import 'sounds.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,7 +16,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<AlarmSettings> _alarms = [];
   Set<int> _daily = {};
-  Set<int> _random = {};
+  final Map<int, String> _labels = {};
 
   @override
   void initState() {
@@ -39,12 +40,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final alarms = await Alarm.getAlarms();
     alarms.sort((a, b) => a.dateTime.compareTo(b.dateTime));
     final daily = await AlarmService.dailyIds();
-    final random = await AlarmService.randomIds();
+    final labels = <int, String>{
+      for (final a in alarms) a.id: await AlarmService.soundLabel(a),
+    };
     if (mounted) {
       setState(() {
         _alarms = alarms;
         _daily = daily;
-        _random = random;
+        _labels
+          ..clear()
+          ..addAll(labels);
       });
     }
   }
@@ -87,7 +92,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         style: const TextStyle(fontSize: 32),
                       ),
                       subtitle: Text(
-                        '${_random.contains(a.id) ? '🎲 Satunnainen ääni' : soundFromAsset(a.assetAudioPath).name}'
+                        '${_labels[a.id] ?? ''}'
                         '${_daily.contains(a.id) ? ' · joka päivä' : ''}',
                       ),
                     ),
@@ -109,33 +114,50 @@ class _NewAlarmSheetState extends State<_NewAlarmSheet> {
   TimeOfDay _time = TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 1)));
   String _soundId = randomSoundId;
   bool _daily = true;
-  final _player = AudioPlayer();
-  String? _playing;
 
-  @override
-  void dispose() {
-    _player.dispose();
-    super.dispose();
+  bool _sequence = false;
+  int _secs = 20;
+  final List<String> _stages = [randomSoundId, randomSoundId, randomSoundId];
+
+  String _nameOf(String id) =>
+      id == randomSoundId ? '🎲 Satunnainen' : soundById(id).name;
+
+  Future<void> _pickSound() async {
+    final id = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => SoundPickerPage(selectedId: _soundId)),
+    );
+    if (id != null) setState(() => _soundId = id);
   }
 
-  Future<void> _toggleSample(AlarmSound s) async {
-    if (_playing == s.id) {
-      await _player.stop();
-      setState(() => _playing = null);
-      return;
-    }
-    await _player.setReleaseMode(ReleaseMode.loop);
-    await _player.play(AssetSource(s.previewAsset), volume: 1.0);
-    setState(() => _playing = s.id);
+  Future<void> _pickStage(int i) async {
+    final id = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SoundPickerPage(selectedId: _stages[i], bundledOnly: true),
+      ),
+    );
+    if (id != null) setState(() => _stages[i] = id);
+  }
+
+  void _setStageCount(int n) {
+    setState(() {
+      while (_stages.length < n) {
+        _stages.add(randomSoundId);
+      }
+      while (_stages.length > n) {
+        _stages.removeLast();
+      }
+    });
   }
 
   Future<void> _save() async {
-    await _player.stop();
     await AlarmService.create(
       hour: _time.hour,
       minute: _time.minute,
       soundId: _soundId,
       daily: _daily,
+      sequence: _sequence ? SequenceSpec(List.of(_stages), _secs) : null,
     );
     if (mounted) Navigator.pop(context, true);
   }
@@ -144,46 +166,82 @@ class _NewAlarmSheetState extends State<_NewAlarmSheet> {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.9,
+      initialChildSize: 0.85,
       maxChildSize: 0.95,
       builder: (context, scroll) => Column(
         children: [
-          ListTile(
-            title: Text(_time.format(context), style: const TextStyle(fontSize: 40)),
-            trailing: const Icon(Icons.edit),
-            onTap: () async {
-              final t = await showTimePicker(context: context, initialTime: _time);
-              if (t != null) setState(() => _time = t);
-            },
-          ),
-          SwitchListTile(
-            title: const Text('Toista joka päivä'),
-            value: _daily,
-            onChanged: (v) => setState(() => _daily = v),
-          ),
-          const Divider(height: 1),
           Expanded(
             child: ListView(
               controller: scroll,
               children: [
-                RadioListTile<String>(
-                  value: randomSoundId,
-                  groupValue: _soundId,
-                  title: const Text('🎲 Satunnainen ääni joka aamu'),
-                  subtitle: const Text('Sovellus arpoo uuden äänen jokaiselle herätykselle'),
-                  onChanged: (v) => setState(() => _soundId = v!),
+                ListTile(
+                  title: Text(_time.format(context), style: const TextStyle(fontSize: 40)),
+                  trailing: const Icon(Icons.edit),
+                  onTap: () async {
+                    final t = await showTimePicker(context: context, initialTime: _time);
+                    if (t != null) setState(() => _time = t);
+                  },
                 ),
-                for (final s in alarmSounds)
-                  RadioListTile<String>(
-                    value: s.id,
-                    groupValue: _soundId,
-                    title: Text(s.name),
-                    secondary: IconButton(
-                      icon: Icon(_playing == s.id ? Icons.stop_circle : Icons.play_circle),
-                      onPressed: () => _toggleSample(s),
+                SwitchListTile(
+                  title: const Text('Toista joka päivä'),
+                  value: _daily,
+                  onChanged: (v) => setState(() => _daily = v),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  title: const Text('🎼 Äänisarja'),
+                  subtitle: const Text('Ääni vaihtuu kesken herätyksen'),
+                  value: _sequence,
+                  onChanged: (v) => setState(() => _sequence = v),
+                ),
+                if (!_sequence)
+                  ListTile(
+                    leading: const Icon(Icons.music_note),
+                    title: Text(_nameOf(_soundId)),
+                    subtitle: const Text('Valitse ääni'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _pickSound,
+                  )
+                else ...[
+                  ListTile(
+                    title: Text('Vaiheita: ${_stages.length}'),
+                    subtitle: Slider(
+                      value: _stages.length.toDouble(),
+                      min: 2,
+                      max: 5,
+                      divisions: 3,
+                      label: '${_stages.length}',
+                      onChanged: (v) => _setStageCount(v.round()),
                     ),
-                    onChanged: (v) => setState(() => _soundId = v!),
                   ),
+                  ListTile(
+                    title: Text('Yhden vaiheen kesto: $_secs s'),
+                    subtitle: Slider(
+                      value: _secs.toDouble(),
+                      min: 10,
+                      max: 45,
+                      divisions: 7,
+                      label: '$_secs s',
+                      onChanged: (v) => setState(() => _secs = v.round()),
+                    ),
+                  ),
+                  for (var i = 0; i < _stages.length; i++)
+                    ListTile(
+                      leading: CircleAvatar(child: Text('${i + 1}')),
+                      title: Text(_nameOf(_stages[i])),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _pickStage(i),
+                    ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: Text(
+                      'Satunnaiset vaiheet arvotaan uudelleen joka aamu. '
+                      'Sarja toistuu alusta, jos et pysäytä herätystä. '
+                      'Sarjaan kelpaavat vain sovelluksen omat äänet.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
