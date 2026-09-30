@@ -35,6 +35,14 @@ const alarmSounds = <AlarmSound>[
   AlarmSound('aooga', '🚗 Aooga-torvi'),
   AlarmSound('noise_bursts', '📡 Kohinapurskeet'),
   AlarmSound('screaming_saws', '😱 Huutavat sahat'),
+  AlarmSound('ambulance', '🚑 Pelastusauto'),
+  AlarmSound('two_sirens', '🚨🚨 Kaksoissireeni'),
+  AlarmSound('tornado', '🌪️ Tornadohälytys'),
+  AlarmSound('train_horn', '🚂 Junan torvi'),
+  AlarmSound('reverse_beeper', '🚛 Peruutussummeri'),
+  AlarmSound('alien_fm', '🛸 Alien-emoalus'),
+  AlarmSound('arcade_chaos', '👾 Arcade-kaaos'),
+  AlarmSound('jackhammer', '🔨 Poravasara'),
 ];
 
 AlarmSound soundById(String id) =>

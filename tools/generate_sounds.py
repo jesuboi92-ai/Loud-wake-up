@@ -193,7 +193,58 @@ def mega_mix():
     return 0.9 * yelp() + 0.7 * klaxon() + 0.6 * digital_beeps() + 0.4 * wobble()
 
 
+def ambulance():
+    f = np.where((t % 1.0) < 0.5, 435.0, 580.0)
+    return saw(f) + 0.8 * square(f * 2) + 0.4 * sine(f * 3)
+
+
+def two_sirens():
+    f1 = 600 + 900 * tri(2.0)
+    f2 = 500 + 1100 * tri(1.6)
+    return square(f1) + square(f2) + 0.5 * sine(f1 * 2)
+
+
+def reverse_beeper():
+    f = np.full_like(t, 1000)
+    return (square(f) + 0.6 * sine(f * 3)) * gate(0.5, 1.0)
+
+
+def alien_fm():
+    depth = 400 + 380 * np.sin(TAU * 0.5 * t)
+    f = 900 + depth * np.sin(TAU * 7 * t)
+    return sine(f) + 0.7 * square(f * 0.5)
+
+
+def arcade_chaos():
+    steps = rng.choice([523, 659, 784, 988, 1319, 1568, 2093, 2637, 3136], size=int(DUR * 16))
+    f = np.repeat(steps, SR // 16).astype(float)
+    f = np.concatenate([f, np.full(len(t) - len(f), f[-1])])[: len(t)]
+    return square(f) + 0.5 * saw(f * 2)
+
+
+def jackhammer():
+    hit = pattern([0], 0.03, 1 / 12)
+    n = rng.uniform(-1, 1, len(t))
+    thud = sine(np.full_like(t, 70)) * pattern([0], 0.06, 1 / 12)
+    return n * hit * 1.0 + thud * 1.5 + square(np.full_like(t, 1800)) * hit * 0.5
+
+
+def train_horn():
+    s = np.zeros_like(t)
+    for f0, a in [(311, 1.0), (370, 0.9), (440, 0.9), (554, 0.6)]:
+        s += a * (saw(np.full_like(t, f0)) + 0.5 * square(np.full_like(t, f0 * 2)))
+    return s * pattern([0, 1.8], 1.5, 4.0)
+
+
+def tornado():
+    f = 250 + 550 * tri(8.0) + 25 * np.sin(TAU * 6 * t)
+    return saw(f) + 0.7 * square(f * 1.5) + 0.4 * sine(f * 3)
+
+
 SOUNDS = {
+    "ambulance": ambulance, "two_sirens": two_sirens, "reverse_beeper": reverse_beeper,
+    "alien_fm": alien_fm, "arcade_chaos": arcade_chaos, "jackhammer": jackhammer,
+    "train_horn": train_horn, "tornado": tornado,
     "siren": siren, "air_raid": airraid, "yelp": yelp, "klaxon": klaxon,
     "beeps": digital_beeps, "fire_alarm": fire_alarm, "smoke_detector": smoke_detector,
     "bell": bell, "retro_clock": retro_clock, "buzzer": buzzer, "foghorn": foghorn,

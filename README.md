@@ -1,6 +1,6 @@
 # Loud Wake Up 🚨
 
-Flutter-herätyskello iOS:lle, jossa on 21 kovaäänistä herätysääntä (sireenit, klaksonit, hälyttimet, wobble, mega-sekoitus…).
+Flutter-herätyskello iOS:lle, jossa on 29 kovaäänistä herätysääntä (sireenit, klaksonit, hälyttimet, wobble, mega-sekoitus…).
 Äänet on generoitu synteettisesti (`tools/generate_sounds.py`), joten ne ovat vapaasti käytettäviä.
 
 ## Ominaisuudet
