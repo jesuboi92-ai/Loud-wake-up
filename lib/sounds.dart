@@ -48,9 +48,13 @@ const alarmSounds = <AlarmSound>[
 AlarmSound soundById(String id) =>
     alarmSounds.firstWhere((s) => s.id == id, orElse: () => alarmSounds.first);
 
-AlarmSound soundFromAsset(String asset) {
-  final id = asset.split('/').last.replaceAll('.wav', '');
+AlarmSound soundFromAsset(String? asset) {
+  final id = (asset ?? '').split('/').last.replaceAll('.wav', '');
   return soundById(id);
 }
 
-AlarmSound pickRandomSound() => alarmSounds[Random().nextInt(alarmSounds.length)];
+/// Arpoo äänen; `except` estää saman äänen peräkkäisinä päivinä.
+AlarmSound pickRandomSound({AlarmSound? except}) {
+  final pool = alarmSounds.where((s) => s.id != except?.id).toList();
+  return pool[Random().nextInt(pool.length)];
+}

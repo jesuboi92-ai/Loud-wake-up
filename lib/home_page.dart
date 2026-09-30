@@ -15,6 +15,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<AlarmSettings> _alarms = [];
   Set<int> _daily = {};
+  Set<int> _random = {};
 
   @override
   void initState() {
@@ -38,10 +39,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final alarms = await Alarm.getAlarms();
     alarms.sort((a, b) => a.dateTime.compareTo(b.dateTime));
     final daily = await AlarmService.dailyIds();
+    final random = await AlarmService.randomIds();
     if (mounted) {
       setState(() {
         _alarms = alarms;
         _daily = daily;
+        _random = random;
       });
     }
   }
@@ -84,7 +87,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         style: const TextStyle(fontSize: 32),
                       ),
                       subtitle: Text(
-                        '${soundFromAsset(a.assetAudioPath).name}'
+                        '${_random.contains(a.id) ? '🎲 Satunnainen ääni' : soundFromAsset(a.assetAudioPath).name}'
                         '${_daily.contains(a.id) ? ' · joka päivä' : ''}',
                       ),
                     ),
@@ -104,8 +107,8 @@ class _NewAlarmSheet extends StatefulWidget {
 
 class _NewAlarmSheetState extends State<_NewAlarmSheet> {
   TimeOfDay _time = TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 1)));
-  String _soundId = alarmSounds.first.id;
-  bool _daily = false;
+  String _soundId = randomSoundId;
+  bool _daily = true;
   final _player = AudioPlayer();
   String? _playing;
 
@@ -166,7 +169,8 @@ class _NewAlarmSheetState extends State<_NewAlarmSheet> {
                 RadioListTile<String>(
                   value: randomSoundId,
                   groupValue: _soundId,
-                  title: const Text('🎲 Satunnainen ääni'),
+                  title: const Text('🎲 Satunnainen ääni joka aamu'),
+                  subtitle: const Text('Sovellus arpoo uuden äänen jokaiselle herätykselle'),
                   onChanged: (v) => setState(() => _soundId = v!),
                 ),
                 for (final s in alarmSounds)
