@@ -1,0 +1,38 @@
+name: Build iOS (unsigned IPA)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Luo iOS-projekti ja lisää asetukset
+        run: |
+          flutter create --platforms=ios --org fi.example --project-name loud_wake_up .
+          python3 tools/patch_ios.py
+
+      - run: flutter pub get
+
+      - name: Rakenna allekirjoittamaton .app
+        run: flutter build ios --release --no-codesign
+
+      - name: Paketoi IPA
+        run: |
+          mkdir Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -r LoudWakeUp.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LoudWakeUp-ipa
+          path: LoudWakeUp.ipa
