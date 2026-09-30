@@ -15,6 +15,12 @@ const _customDir = 'custom_sounds';
 const categoryLabels = <String, String>{
   'custom': '🎵 Omat',
   'classic': '⭐ Valitut',
+  'voice': '😱 Huudot & karjunta',
+  'scrape': '🪟 Raapivat & kirskuvat',
+  'animal': '🐓 Eläimet',
+  'impact': '💥 Räjähdykset & särky',
+  'machine': '⚙️ Koneet & hälyttimet',
+  'music': '🎺 Soittimet',
   'sirens': '🚨 Sireenit',
   'beeps': '⏰ Piippaukset',
   'heavy': '🔊 Raskaat',
@@ -83,17 +89,19 @@ class SoundLibrary {
   static List<AlarmSound> get custom => _custom;
 
   static Future<void> load() async {
-    try {
-      final raw = await rootBundle.loadString('assets/sounds/variants.json');
-      final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
-      _builtIn = [
-        ..._classic,
-        for (final m in list)
-          AlarmSound(m['id'] as String, m['name'] as String,
-              category: m['category'] as String),
-      ];
-    } catch (_) {
-      _builtIn = List.of(_classic);
+    _builtIn = List.of(_classic);
+    for (final file in const ['characters.json', 'variants.json']) {
+      try {
+        final raw = await rootBundle.loadString('assets/sounds/$file');
+        final list = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+        _builtIn.addAll([
+          for (final m in list)
+            AlarmSound(m['id'] as String, m['name'] as String,
+                category: m['category'] as String),
+        ]);
+      } catch (_) {
+        // Puuttuva lista ei estä sovellusta käynnistymästä.
+      }
     }
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getStringList(_customKey) ?? [];
